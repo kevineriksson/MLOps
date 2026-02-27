@@ -27,11 +27,11 @@ Predicts `fare_amount` for NYC green taxi trips at **booking time** using XGBoos
 ## How to Run
 
 ```bash
-# EDA — generates plots in plots/ directory
-python eda.py
+# EDA — generates regression_plots in regression_plots/ directory
+python regression_eda.py
 
-# Training — prints metrics and saves models to models/
-python train.py
+# Training — prints metrics and saves regression_models to regression_models/
+python regression_train.py
 ```
 
 ## Artifacts

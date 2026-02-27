@@ -3,7 +3,7 @@ Regression Model Training for NYC Green Taxi Fare Prediction
 - Baseline: 4 booking-time features
 - Improved: +1 feature (est_duration_min via OOF duration model)
 - Validates improvement with cross-validation and paired comparison
-- Saves models to models/ directory
+- Saves regression_models to regression_models/ directory
 """
 
 import pandas as pd
@@ -265,15 +265,15 @@ print(f"  Samples where improved model is better: {pct_improved:.1f}%")
 print(f"  Mean per-sample error reduction: ${mean_improvement:.4f}")
 
 # ── Save Models ──────────────────────────────────────────────────────────────
-os.makedirs("models", exist_ok=True)
-joblib.dump(improved_model, "models/regression_model.pkl")
-joblib.dump(duration_model_final, "models/duration_model.pkl")
+os.makedirs("regression_models", exist_ok=True)
+joblib.dump(improved_model, "regression_models/regression_model.pkl")
+joblib.dump(duration_model_final, "regression_models/duration_model.pkl")
 
 print("\n" + "=" * 70)
 print("ARTIFACTS SAVED")
 print("=" * 70)
-print("  models/regression_model.pkl  — XGBRegressor (5 features)")
-print("  models/duration_model.pkl    — XGBRegressor (duration predictor)")
+print("  regression_models/regression_model.pkl  — XGBRegressor (5 features)")
+print("  regression_models/duration_model.pkl    — XGBRegressor (duration predictor)")
 
 print("\n" + "=" * 70)
 print("IMPROVEMENT ANALYSIS")

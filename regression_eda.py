@@ -1,6 +1,6 @@
 """
 EDA for NYC Green Taxi Fare Prediction (Regression)
-Produces plots in plots/ directory and prints conclusions to stdout.
+Produces regression_plots in regression_plots/ directory and prints conclusions to stdout.
 """
 
 import pandas as pd
@@ -29,7 +29,7 @@ df = df[(df["trip_duration_min"] > 0) & (df["trip_duration_min"] <= 180)]
 df["pickup_hour"] = df["lpep_pickup_datetime"].dt.hour
 
 # OOF est_duration_min (simple proxy for EDA: use actual duration as stand-in for scatter)
-# In train.py this is computed properly via OOF to avoid leakage
+# In regression_train.py this is computed properly via OOF to avoid leakage
 from sklearn.model_selection import KFold
 import xgboost as xgb
 
@@ -46,7 +46,7 @@ for train_idx, val_idx in kf.split(X_dur):
 
 df["est_duration_min"] = oof_pred
 
-os.makedirs("plots", exist_ok=True)
+os.makedirs("regression_plots", exist_ok=True)
 
 # ── Plot 1: fare_amount histogram + log-histogram ────────────────────────────
 fig, axes = plt.subplots(1, 2, figsize=(12, 4))
@@ -60,7 +60,7 @@ axes[1].set_title("Log(1 + Fare Amount) Distribution")
 axes[1].set_xlabel("log(1 + Fare)")
 axes[1].set_ylabel("Count")
 plt.tight_layout()
-plt.savefig("plots/fare_histogram.png", dpi=150)
+plt.savefig("regression_plots/fare_histogram.png", dpi=150)
 plt.close()
 
 # ── Plot 2: trip_duration_min histogram ──────────────────────────────────────
@@ -70,7 +70,7 @@ plt.title("Trip Duration Distribution")
 plt.xlabel("Duration (min)")
 plt.ylabel("Count")
 plt.tight_layout()
-plt.savefig("plots/trip_duration_histogram.png", dpi=150)
+plt.savefig("regression_plots/trip_duration_histogram.png", dpi=150)
 plt.close()
 
 # ── Plot 3: % missing per column ────────────────────────────────────────────
@@ -83,7 +83,7 @@ plt.title("Percentage of Missing Values per Column")
 plt.ylabel("% Missing")
 plt.xticks(rotation=45, ha="right")
 plt.tight_layout()
-plt.savefig("plots/missing_values.png", dpi=150)
+plt.savefig("regression_plots/missing_values.png", dpi=150)
 plt.close()
 
 # ── Plot 4: Boxplots of fare_amount and trip_duration_min ────────────────────
@@ -96,7 +96,7 @@ axes[1].boxplot(df["trip_duration_min"].dropna(), vert=True)
 axes[1].set_title("Trip Duration Boxplot")
 axes[1].set_ylabel("Duration (min)")
 plt.tight_layout()
-plt.savefig("plots/boxplots.png", dpi=150)
+plt.savefig("regression_plots/boxplots.png", dpi=150)
 plt.close()
 
 # ── Plot 5: Scatter fare_amount vs trip_distance (post-trip context) ─────────
@@ -107,7 +107,7 @@ plt.title("Fare Amount vs Trip Distance (post-trip context)")
 plt.xlabel("Trip Distance (miles)")
 plt.ylabel("Fare ($)")
 plt.tight_layout()
-plt.savefig("plots/fare_vs_distance.png", dpi=150)
+plt.savefig("regression_plots/fare_vs_distance.png", dpi=150)
 plt.close()
 
 # ── Plot 6: Scatter fare_amount vs est_duration_min ──────────────────────────
@@ -117,7 +117,7 @@ plt.title("Fare Amount vs Estimated Duration")
 plt.xlabel("Estimated Duration (min)")
 plt.ylabel("Fare ($)")
 plt.tight_layout()
-plt.savefig("plots/fare_vs_est_duration.png", dpi=150)
+plt.savefig("regression_plots/fare_vs_est_duration.png", dpi=150)
 plt.close()
 
 # ── Plot 7: Avg fare by pickup_hour and by RatecodeID ───────────────────────
@@ -135,5 +135,5 @@ axes[1].set_title("Average Fare by RatecodeID")
 axes[1].set_xlabel("RatecodeID")
 axes[1].set_ylabel("Avg Fare ($)")
 plt.tight_layout()
-plt.savefig("plots/avg_fare_by_hour_and_ratecode.png", dpi=150)
+plt.savefig("regression_plots/avg_fare_by_hour_and_ratecode.png", dpi=150)
 plt.close()
