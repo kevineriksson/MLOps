@@ -137,23 +137,3 @@ axes[1].set_ylabel("Avg Fare ($)")
 plt.tight_layout()
 plt.savefig("plots/avg_fare_by_hour_and_ratecode.png", dpi=150)
 plt.close()
-
-# ── Print Conclusions ────────────────────────────────────────────────────────
-print("=" * 60)
-print("EDA CONCLUSIONS")
-print("=" * 60)
-print(f"- Dataset size after cleaning: {len(df):,} rows")
-print(f"- Fare amount: mean=${df['fare_amount'].mean():.2f}, median=${df['fare_amount'].median():.2f}")
-print(f"- Trip duration: mean={df['trip_duration_min'].mean():.1f} min, median={df['trip_duration_min'].median():.1f} min")
-print(f"- Trip distance: mean={df['trip_distance'].mean():.2f} mi, median={df['trip_distance'].median():.2f} mi")
-print(f"- Fare distribution is right-skewed; log transform makes it more normal")
-print(f"- Strong linear relationship between fare and trip distance")
-print(f"- est_duration_min shows positive correlation with fare (useful feature)")
-print(f"- Average fare peaks during early morning hours (likely airport/long trips)")
-print(f"- RatecodeID 2 (JFK flat rate) and 3 (Newark) have highest avg fares")
-if len(missing_pct) > 0:
-    print(f"- Columns with missing values: {', '.join(missing_pct.index.tolist())}")
-else:
-    print(f"- No missing values after cleaning")
-print(f"- Outlier filtering removed extreme fares (>99.9th pctl) and durations (>180 min)")
-print(f"\nAll plots saved to plots/ directory.")
