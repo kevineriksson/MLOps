@@ -4,7 +4,7 @@ Classification Model Training for NYC Green Taxi Fare Prediction
 - Baseline: 4 booking-time features
 - Improved: +1 feature (est_duration_min via OOF duration model)
 - Validates improvement with cross-validation
-- Saves models to models/ directory
+- Saves classification_models to classification_models/ directory
 """
 
 import pandas as pd
@@ -278,15 +278,15 @@ print(f"\n  Baseline — AUC: {np.mean(cv_baseline_aucs):.4f} +/- {np.std(cv_bas
 print(f"  Improved — AUC: {np.mean(cv_improved_aucs):.4f} +/- {np.std(cv_improved_aucs):.4f}")
 
 # ── Save Models ──────────────────────────────────────────────────────────────
-os.makedirs("models", exist_ok=True)
-joblib.dump(improved_model, "models/classification_model.pkl")
-joblib.dump(duration_model_final, "models/duration_model.pkl")
+os.makedirs("classification_models", exist_ok=True)
+joblib.dump(improved_model, "classification_models/classification_model.pkl")
+joblib.dump(duration_model_final, "classification_models/duration_model.pkl")
 
 print("\n" + "=" * 70)
 print("ARTIFACTS SAVED")
 print("=" * 70)
-print("  models/classification_model.pkl — XGBClassifier (5 features)")
-print("  models/duration_model.pkl       — XGBRegressor (duration predictor)")
+print("  classification_models/classification_model.pkl — XGBClassifier (5 features)")
+print("  classification_models/duration_model.pkl       — XGBRegressor (duration predictor)")
 
 # ── Explanations ─────────────────────────────────────────────────────────────
 print("\n" + "=" * 70)

@@ -28,11 +28,11 @@ Predicts whether a NYC green taxi trip will be a **high-fare trip** (`fare_amoun
 ## How to Run
 
 ```bash
-# EDA — generates plots in plots/ directory
-python eda.py
+# EDA — generates classification_plots in classification_plots/ directory
+python classification_eda.py
 
-# Training — prints metrics and saves models to models/
-python train.py
+# Training — prints metrics and saves classification_models to classification_models/
+python classification_train.py
 ```
 
 ## Artifacts
