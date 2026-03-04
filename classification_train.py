@@ -142,7 +142,7 @@ for fold, (tr_idx, va_idx) in enumerate(kf.split(X_dur_train), 1):
 
 from sklearn.metrics import mean_absolute_error
 oof_dur_mae = mean_absolute_error(y_dur_train, oof_duration_pred)
-print(f"  OOF Duration MAE: {oof_dur_mae:.2f} min")
+print(f"OOF Duration MAE: {oof_dur_mae:.2f} min")
 
 # Final duration model on all training data
 duration_model_final = xgb.XGBRegressor(**dur_params)

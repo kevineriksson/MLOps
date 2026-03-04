@@ -278,10 +278,10 @@ print("  regression_models/duration_model.pkl    — XGBRegressor (duration pred
 print("\n" + "=" * 70)
 print("IMPROVEMENT ANALYSIS")
 print("=" * 70)
-print(f"  Adding est_duration_min provides a booking-time proxy for trip length.")
-print(f"  Since fare is strongly correlated with distance/duration, this feature")
-print(f"  gives the model signal about how long a trip will take — information")
-print(f"  that is otherwise unavailable at booking time.")
+print(f"""  
+      Adding est_duration_min provides a booking-time proxy for trip length. 
+      Since fare is strongly correlated with distance/duration, this feature gives the model signal about how long a trip will take — 
+      information that is otherwise unavailable at booking time.""")
 mae_pct = (baseline_mae - improved_mae) / baseline_mae * 100
 print(f"  MAE improved by {mae_pct:.1f}% ({baseline_mae:.4f} -> {improved_mae:.4f})")
 print(f"  The improvement is consistent across all {5} CV folds.")
