@@ -4,3 +4,4 @@ data/
 *.pkl
 regression_models/
 
+/regression_models
