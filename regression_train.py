@@ -15,7 +15,9 @@ from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # ── Data Loading & Cleaning ──────────────────────────────────────────────────
-df = pd.read_parquet("green_tripdata_2021-01.parquet", engine="pyarrow")
+df_jan = pd.read_parquet("green_tripdata_2021-01.parquet", engine="pyarrow")
+df_feb = pd.read_parquet("green_tripdata_2021-02.parquet", engine="pyarrow")
+df = pd.concat([df_jan, df_feb], ignore_index=True)
 
 df["lpep_pickup_datetime"] = pd.to_datetime(df["lpep_pickup_datetime"])
 df["lpep_dropoff_datetime"] = pd.to_datetime(df["lpep_dropoff_datetime"])
