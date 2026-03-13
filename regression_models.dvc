@@ -1,0 +1,6 @@
+outs:
+- md5: 5c837e2bca1fea644eb22abce76a8a5a.dir
+  size: 6128999
+  nfiles: 2
+  hash: md5
+  path: regression_models
