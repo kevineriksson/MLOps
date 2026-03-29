@@ -163,7 +163,7 @@ for cfg in xgb_configs:
 
         metrics = compute_metrics(y_test, model.predict(X_test))
         log_metrics(metrics)
-        mlflow.xgboost.log_model(model, artifact_path="model")
+        mlflow.xgboost.log_model(model, name="model")
 
         print(f"  XGB d={cfg['max_depth']} lr={cfg['learning_rate']} n={cfg['n_estimators']} "
               f"| MAE={metrics['mae']:.4f} RMSE={metrics['rmse']:.4f} R²={metrics['r2']:.4f}")
@@ -196,7 +196,7 @@ for cfg in rf_configs:
 
         metrics = compute_metrics(y_test, model.predict(X_test))
         log_metrics(metrics)
-        mlflow.sklearn.log_model(model, artifact_path="model")
+        mlflow.sklearn.log_model(model, name="model")
 
         print(f"  RF d={cfg['max_depth']} n={cfg['n_estimators']} mss={cfg['min_samples_split']} "
               f"| MAE={metrics['mae']:.4f} RMSE={metrics['rmse']:.4f} R²={metrics['r2']:.4f}")
@@ -229,7 +229,7 @@ for cfg in ridge_configs:
 
         metrics = compute_metrics(y_test, model.predict(X_test))
         log_metrics(metrics)
-        mlflow.sklearn.log_model(model, artifact_path="model")
+        mlflow.sklearn.log_model(model, name="model")
 
         print(f"  Ridge alpha={cfg['alpha']} intercept={cfg['fit_intercept']} "
               f"| MAE={metrics['mae']:.4f} RMSE={metrics['rmse']:.4f} R²={metrics['r2']:.4f}")
