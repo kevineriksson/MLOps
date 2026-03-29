@@ -5,3 +5,6 @@ data/
 regression_models/
 
 /regression_models
+
+mlruns/
+mlartifacts/
