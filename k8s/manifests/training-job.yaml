@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: training-job
+  namespace: mlops
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      containers:
+        - name: trainer
+          image: mlops-training:latest
+          imagePullPolicy: Never
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow-service:5000"
+            - name: DATA_DIR
+              value: "/mlflow-data"
+          volumeMounts:
+            - name: shared-data
+              mountPath: /mlflow-data
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "1"
+            limits:
+              memory: "2Gi"
+              cpu: "2"
+      restartPolicy: Never
+      volumes:
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: mlops-shared-pvc

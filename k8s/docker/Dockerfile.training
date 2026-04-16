@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir mlflow==2.18.0
+
+COPY k8s/training/train_k8s.py .
+
+# Bake data files into the image so they can be seeded to the PVC
+COPY green_tripdata_2021-01.parquet /seed-data/
+COPY green_tripdata_2021-02.parquet /seed-data/
+COPY green_tripdata_2021-03.parquet /seed-data/
+
+# Copy data to PVC (no-clobber), then run training
+CMD cp -n /seed-data/*.parquet /mlflow-data/ 2>/dev/null; \
+    python train_k8s.py

@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir \
+    pandas numpy xgboost scikit-learn mlflow==2.18.0 joblib flask pyarrow
+
+COPY k8s/app/predict_app.py .
+
+EXPOSE 8080
+
+CMD ["python", "predict_app.py"]

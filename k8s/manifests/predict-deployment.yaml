@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: predict-app
+  namespace: mlops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: predict-app
+  template:
+    metadata:
+      labels:
+        app: predict-app
+    spec:
+      containers:
+        - name: predict
+          image: mlops-predict:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow-service:5000"
+            - name: DATA_DIR
+              value: "/mlflow-data"
+          volumeMounts:
+            - name: shared-data
+              mountPath: /mlflow-data
+      volumes:
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: mlops-shared-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: predict-service
+  namespace: mlops
+spec:
+  selector:
+    app: predict-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP

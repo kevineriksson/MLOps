@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-server
+  namespace: mlops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow-server
+  template:
+    metadata:
+      labels:
+        app: mlflow-server
+    spec:
+      containers:
+        - name: mlflow
+          image: mlops-mlflow:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          command:                                          
+            - mlflow
+            - server
+            - --host=0.0.0.0
+            - --port=5000
+            - --backend-store-uri=sqlite:////mlflow-data/mlflow.db
+            - --default-artifact-root=/mlflow-data/artifacts
+            - --gunicorn-opts=--forwarded-allow-ips=*      
+          volumeMounts:
+            - name: shared-data
+              mountPath: /mlflow-data
+      volumes:
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: mlops-shared-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-service
+  namespace: mlops
+spec:
+  selector:
+    app: mlflow-server
+  ports:
+    - port: 5000
+      targetPort: 5000
+  type: ClusterIP

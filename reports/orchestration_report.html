@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>NYC Green Taxi — Kubernetes MLOps Report</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #111; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  h2 { font-size: 14px; margin-top: 28px; margin-bottom: 8px; border-bottom: 2px solid #111; padding-bottom: 4px; }
+  h3 { font-size: 13px; margin-top: 18px; margin-bottom: 6px; }
+  p  { line-height: 1.6; margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+  th { background: #222; color: #fff; padding: 6px 10px; text-align: left; }
+  td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+  tr:nth-child(even) td { background: #f5f5f5; }
+  code { background: #eee; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+  pre { background: #1a1a2e; color: #e0e0e0; padding: 12px; border-radius: 4px; font-size: 11px; overflow-x: auto; line-height: 1.5; }
+  .note { background: #f0f0f0; border-left: 4px solid #555; padding: 8px 12px; margin: 10px 0; font-size: 12px; }
+  .best { background: #d4edda !important; font-weight: bold; }
+  .prod { background: #1a7a1a; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; }
+  .staging { background: #555; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; }
+  .match { color: #1a7a1a; font-weight: bold; }
+  .arch { background: #f9f9f9; border: 1px solid #ddd; padding: 16px; border-radius: 4px; margin: 10px 0; font-family: monospace; font-size: 11px; white-space: pre; line-height: 1.4; }
+  @media print { pre { background: #eee; color: #111; } }
+</style>
+</head>
+<body>
+
+<h1>NYC Green Taxi Fare Prediction &mdash; Kubernetes MLOps Deployment Report</h1>
+<p style="color:#555; font-size:12px;">Minikube cluster with MLflow tracking, model training, and prediction serving</p>
+
+<h2>1. Project Overview</h2>
+
+<table>
+  <tr><th>Item</th><th>Value</th></tr>
+  <tr><td>Training data</td><td>January + February 2021 green taxi (71,701 rows after cleaning)</td></tr>
+  <tr><td>Evaluation data</td><td>March 2021 green taxi (40,736 rows after cleaning)</td></tr>
+  <tr><td>Train / Val split</td><td>80/20 (57,360 / 14,341) with random_state=42</td></tr>
+  <tr><td>Features (5)</td><td>PULocationID, DOLocationID, pickup_hour, passenger_count, est_duration_min</td></tr>
+  <tr><td>Target</td><td>fare_amount (USD)</td></tr>
+  <tr><td>MLflow version</td><td>2.18.0 (SQLite backend on K8s PVC)</td></tr>
+  <tr><td>Kubernetes</td><td>Minikube (4GB RAM, 2 CPUs)</td></tr>
+</table>
+
+<h2>2. Kubernetes Architecture</h2>
+
+<div class="arch">              +-------------------------+
+              |        Ingress          |
+              |  taxi.local             |
+              |  mlflow.local           |
+              +-----+-------------+----+
+                    |             |
+                    v             v
+           +------------+  +-----------+
+           | Flask App  |  |  MLflow   |
+           | Predict    |  |  Server   |
+           |  :8080     |  |  :5000    |
+           +------+-----+  +-----+----+
+                  |               |
+                  v               v
+             +------------------------+
+             |    Shared PVC (2Gi)    |
+             |  *.parquet, mlflow.db  |
+             |  mlruns/, *.pkl        |
+             +----------+-------------+
+                        ^
+             +----------+-------------+
+             |    Training Job        |
+             |  (runs once, exits)    |
+             +-----------+------------+</div>
+
+<table>
+  <tr><th>Component</th><th>K8s Resource</th><th>Image</th><th>Port</th><th>Purpose</th></tr>
+  <tr><td>MLflow Server</td><td>Deployment + ClusterIP Service</td><td>mlops-mlflow:latest</td><td>5000</td><td>Experiment tracking, model registry</td></tr>
+  <tr><td>Training Pipeline</td><td>Job</td><td>mlops-training:latest</td><td>&mdash;</td><td>Trains 3 model types, registers best, assigns stages</td></tr>
+  <tr><td>Prediction App</td><td>Deployment + ClusterIP Service</td><td>mlops-predict:latest</td><td>8080</td><td>Flask web app for fare predictions</td></tr>
+  <tr><td>Shared Storage</td><td>PersistentVolumeClaim</td><td>&mdash;</td><td>&mdash;</td><td>2Gi volume for data, DB, and models</td></tr>
+  <tr><td>Ingress</td><td>NGINX Ingress</td><td>&mdash;</td><td>80</td><td>Routes taxi.local and mlflow.local</td></tr>
+</table>
+
+<p>Deployment order: MLflow server &rarr; Training job (seeds data, trains, registers, stages) &rarr; Prediction app (loads Production model).</p>
+
+<h2>3. Experiment 1 &mdash; XGBoost</h2>
+
+<table>
+  <tr><th>Run</th><th>max_depth</th><th>learning_rate</th><th>n_estimators</th><th>MAE</th><th>RMSE</th><th>R&sup2;</th></tr>
+  <tr><td>Run 1</td><td>4</td><td>0.05</td><td>500</td><td>$4.1987</td><td>$7.7351</td><td>0.6767</td></tr>
+  <tr><td>Run 2</td><td>6</td><td>0.05</td><td>500</td><td>$3.9747</td><td>$7.4512</td><td>0.7000</td></tr>
+  <tr><td>Run 3</td><td>6</td><td>0.05</td><td>1000</td><td>$3.8428</td><td>$7.3345</td><td>0.7094</td></tr>
+  <tr><td>Run 4</td><td>6</td><td>0.01</td><td>1000</td><td>$4.1494</td><td>$7.6566</td><td>0.6833</td></tr>
+  <tr class="best"><td>Run 5 &#9733;</td><td>8</td><td>0.05</td><td>1000</td><td>$3.7526</td><td>$7.2486</td><td>0.7161</td></tr>
+</table>
+<img src="screenshots/k8s_xgb_runs.png" style="width:100%;margin:10px 0;border:1px solid #ccc;" alt="XGBoost runs in MLflow"/>
+
+<h2>4. Experiment 2 &mdash; Random Forest</h2>
+
+<table>
+  <tr><th>Run</th><th>max_depth</th><th>n_estimators</th><th>min_samples_split</th><th>MAE</th><th>RMSE</th><th>R&sup2;</th></tr>
+  <tr><td>Run 1</td><td>10</td><td>100</td><td>5</td><td>$4.2989</td><td>$7.8855</td><td>0.6640</td></tr>
+  <tr><td>Run 2</td><td>15</td><td>200</td><td>5</td><td>$4.1299</td><td>$7.7086</td><td>0.6790</td></tr>
+  <tr><td>Run 3</td><td>20</td><td>200</td><td>2</td><td>$4.0407</td><td>$7.6330</td><td>0.6852</td></tr>
+  <tr><td>Run 4</td><td>20</td><td>300</td><td>2</td><td>$4.0393</td><td>$7.6336</td><td>0.6852</td></tr>
+  <tr class="best"><td>Run 5 &#9733;</td><td>None</td><td>300</td><td>5</td><td>$4.0373</td><td>$7.6217</td><td>0.6862</td></tr>
+</table>
+<img src="screenshots/k8s_rf_runs.png" style="width:100%;margin:10px 0;border:1px solid #ccc;" alt="Random Forest runs in MLflow"/>
+
+<h2>5. Experiment 3 &mdash; Ridge Regression</h2>
+
+<table>
+  <tr><th>Run</th><th>alpha</th><th>fit_intercept</th><th>MAE</th><th>RMSE</th><th>R&sup2;</th></tr>
+  <tr><td>Run 1</td><td>0.1</td><td>True</td><td>$4.8902</td><td>$8.5434</td><td>0.6057</td></tr>
+  <tr><td>Run 2</td><td>1.0</td><td>True</td><td>$4.8902</td><td>$8.5434</td><td>0.6057</td></tr>
+  <tr><td>Run 3</td><td>10.0</td><td>True</td><td>$4.8902</td><td>$8.5434</td><td>0.6057</td></tr>
+  <tr class="best"><td>Run 4 &#9733;</td><td>100.0</td><td>True</td><td>$4.8902</td><td>$8.5434</td><td>0.6057</td></tr>
+  <tr><td>Run 5</td><td>1.0</td><td>False</td><td>$4.9094</td><td>$8.5517</td><td>0.6049</td></tr>
+</table>
+<div class="note">Ridge performs nearly identically across all alpha values &mdash; the model is limited by its linear nature, not regularization.</div>
+<img src="screenshots/k8s_ridge_runs.png" style="width:100%;margin:10px 0;border:1px solid #ccc;" alt="Ridge runs in MLflow"/>
+
+<h2>6. March 2021 Evaluation &amp; Model Stages</h2>
+
+<p>Best model per experiment evaluated on March 2021 data. Stages assigned via <code>client.transition_model_version_stage()</code> in code.</p>
+
+<table>
+  <tr><th>Registered Model</th><th>MAE (March)</th><th>RMSE (March)</th><th>R&sup2; (March)</th><th>Stage</th></tr>
+  <tr class="best"><td>GreenTaxi-XGBoost v1</td><td>$3.9290</td><td>$7.7936</td><td>0.6879</td><td><span class="prod">Production</span></td></tr>
+  <tr><td>GreenTaxi-RandomForest v1</td><td>$4.2185</td><td>$8.1392</td><td>0.6596</td><td><span class="staging">Staging</span></td></tr>
+  <tr><td>GreenTaxi-Ridge v1</td><td>$4.9967</td><td>$8.8887</td><td>0.5940</td><td><span class="staging">Staging</span></td></tr>
+</table>
+<img src="screenshots/k8s_march_eval.png" style="width:100%;margin:10px 0;border:1px solid #ccc;" alt="March evaluation"/>
+
+<h2>7. Model Reproduction</h2>
+
+<p>Best model (XGBoost) reloaded from MLflow and re-evaluated on the same validation set.</p>
+
+<table>
+  <tr><th>Metric</th><th>Logged</th><th>Reproduced</th><th>Match</th></tr>
+  <tr><td>MAE</td><td>$3.7526</td><td>$3.7526</td><td class="match">&#10003;</td></tr>
+  <tr><td>RMSE</td><td>$7.2486</td><td>$7.2486</td><td class="match">&#10003;</td></tr>
+  <tr><td>R&sup2;</td><td>0.7161</td><td>0.7161</td><td class="match">&#10003;</td></tr>
+</table>
+<div class="note">Results match exactly: same model artifact (no retraining), same split (<code>random_state=42</code>), deterministic inference.</div>
+
+<h2>8. Prediction Web Application</h2>
+
+<p>Flask app loads the Production XGBoost model from MLflow and a duration model from the shared PVC. Users enter trip details and receive a predicted fare.</p>
+
+<table>
+  <tr><th>Setting</th><th>Value</th></tr>
+  <tr><td>Model</td><td><code>models:/GreenTaxi-XGBoost/Production</code></td></tr>
+  <tr><td>Duration model</td><td><code>/mlflow-data/duration_model.pkl</code></td></tr>
+  <tr><td>Port</td><td>8080 (taxi.local via Ingress)</td></tr>
+</table>
+<img src="screenshots/k8s_predict_app.png" style="width:100%;margin:10px 0;border:1px solid #ccc;" alt="Prediction web app"/>
+<img src="screenshots/k8s_predict_result.png" style="width:100%;margin:10px 0;border:1px solid #ccc;" alt="Prediction result"/>
+
+<h2>9. Running Cluster</h2>
+
+<img src="screenshots/k8s_pods.png" style="width:100%;margin:10px 0;border:1px solid #ccc;" alt="Kubernetes pods running"/>
+
+</body>
+</html>
